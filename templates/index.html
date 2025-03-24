@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spam Checker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Spam Checker</h1>
+        <p>Copy/paste an email message to detect spam words.</p>
+        <textarea id="emailText" placeholder="Enter your email content here..."></textarea>
+        <button onclick="checkSpam()">Check Spam</button>
+        
+        <div class="result">
+            <p><strong>Score:</strong> <span id="score">0</span></p>
+            <p><strong>Prediction:</strong> <span id="prediction">Waiting...</span></p>
+            <p class="probability"><strong>Spam Probability:</strong> <span id="probability">0%</span></p>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
