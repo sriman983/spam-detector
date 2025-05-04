@@ -1,25 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spam Checker</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Spam Email Detector</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Fancy loading dots */
+        .dots::after {
+            content: ' ';
+            animation: dots 1s steps(5, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% {
+                content: '.';
+            }
+            40% {
+                content: '..';
+            }
+            60% {
+                content: '...';
+            }
+            80%, 100% {
+                content: '';
+            }
+        }
+    </style>
 </head>
-<body>
-    <div class="container">
-        <h1>Spam Checker</h1>
-        <p>Copy/paste an email message to detect spam words.</p>
-        <textarea id="emailText" placeholder="Enter your email content here..."></textarea>
-        <button onclick="checkSpam()">Check Spam</button>
-        
-        <div class="result">
-            <p><strong>Score:</strong> <span id="score">0</span></p>
-            <p><strong>Prediction:</strong> <span id="prediction">Waiting...</span></p>
-            <p class="probability"><strong>Spam Probability:</strong> <span id="probability">0%</span></p>
-        </div>
-    </div>
+<body class="bg-gradient-to-br from-cyan-500 to-blue-500 min-h-screen flex flex-col">
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <!-- Navbar -->
+    <nav class="bg-white shadow-md p-4 sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="text-2xl font-bold text-cyan-600">SpamDetector</div>
+            <div class="space-x-4 text-gray-600">
+                <a href="#detect" class="hover:text-cyan-500">Detect</a>
+                <a href="#about" class="hover:text-cyan-500">About</a>
+                <a href="#contact" class="hover:text-cyan-500">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Section -->
+    <main class="flex-grow flex flex-col items-center justify-center p-6">
+
+        <!-- Hero -->
+        <div class="text-center text-white mb-12">
+            <h1 class="text-5xl font-bold mb-4">Spam Email Detector</h1>
+            <p class="text-lg">AI-powered accuracy to protect your inbox!</p>
+        </div>
+
+        <!-- Email Form -->
+        <section id="detect" class="bg-white p-8 rounded-xl shadow-lg max-w-2xl w-full text-center">
+            <h2 class="text-3xl font-semibold text-cyan-600 mb-6">Try It Now</h2>
+            <form id="email-form" class="space-y-4">
+                <textarea name="email_text" id="email_text" placeholder="Paste your email content here..." rows="8" required class="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500"></textarea>
+                <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-3 rounded-md font-semibold transition">Analyze</button>
+            </form>
+
+            <!-- Loader with sniper -->
+            <div id="loader" style="display:none;" class="text-center mt-3">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+            <!-- Result -->
+            <div id="result" class="hidden mt-6 p-4 rounded-lg text-lg font-semibold"></div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-gray-200 rounded-full h-4 mt-4 hidden" id="progress-container">
+                <div id="progress-bar" class="bg-cyan-600 h-4 rounded-full transition-all duration-500" style="width: 0%;"></div>
+            </div>
+            <div id="toast" class="toast position-fixed bottom-0 end-0 p-3 bg-light" style="display:none;">
+                <div class="toast-body">Analyzing... please wait 🚀</div>
+            </div>
+        </section>
+        <!-- About -->
+        <section id="about" class="bg-white p-8 rounded-xl shadow-lg max-w-2xl w-full my-12 text-center">
+            <h2 class="text-3xl font-semibold text-cyan-600 mb-4">About</h2>
+            <p class="text-gray-700">SpamDetector uses advanced machine learning models to deliver world-class spam detection with over 98% accuracy!</p>
+        </section>
+
+        <!-- Contact -->
+        <section id="contact" class="bg-white p-8 rounded-xl shadow-lg max-w-2xl w-full mb-12 text-center">
+            <h2 class="text-3xl font-semibold text-cyan-600 mb-4">Contact</h2>
+            <p class="text-gray-700">Need help? Contact us at <strong>uday@spamdetector.com</strong>.</p>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center text-white text-sm p-4">
+        © 2025 SpamDetector. All rights reserved.
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        const form = document.getElementById('email-form');
+        const loader = document.getElementById('loader');
+        const resultDiv = document.getElementById('result');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            loader.classList.remove('hidden');
+            resultDiv.classList.add('hidden');
+            progressContainer.classList.add('hidden');
+
+            const emailText = document.getElementById('email_text').value;
+
+            const response = await fetch('/predict', {
+                method: 'POST',
+                body: new URLSearchParams({ email_text: emailText }),
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            });
+
+            const data = await response.json();
+
+            loader.classList.add('hidden');
+            resultDiv.classList.remove('hidden');
+            progressContainer.classList.remove('hidden');
+
+            resultDiv.innerHTML = data.prediction === 'Spam' 
+                ? `🚫 <span class="text-red-600">${data.prediction} Email!</span>` 
+                : `✅ <span class="text-green-600">Not Spam!</span>`;
+
+            progressBar.style.width = data.spamProbability + "%";
+        });
+    </script>
+
 </body>
 </html>
